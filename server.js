@@ -39,10 +39,10 @@ app.use("/audio", express.static(AUDIO_DIR));
  * (Opcional, por si más adelante guardas audios por línea)
  */
 const LINE_TO_FILE = {
-  intro_1: "intro_1.mp3",
-  intro_2: "intro_2.mp3",
-  resolucion_1: "resolucion_1.mp3",
-  cierre_1: "cierre_1.mp3",
+  intro: "intro.mp3",
+  que_es: "que_es.mp3",
+  aprendizaje: "aprendizaje.mp3",
+  despedida: "despedida.mp3",
 };
 
 // Broadcast WS al front
