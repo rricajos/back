@@ -43,7 +43,7 @@ app.use("/audio", express.static(AUDIO_DIR));
 const AUDIO_BANK = {
   intro: {
     file: "intro.mp3",
-    text: "Os escucho perfectamente... Buenas noches a todos. :::: Y sí, confirmo: :: No duermo, :: no pido vacaciones,:: y los lunes no me afectan. :::: Pero prometo ser simpática igualmente."
+    text: "Os escucho perfectamente... Buenas noches a todos. :::: Y sí, :: confirmo: :: No duermo, :: no pido vacaciones y los lunes no me afectan. :::: Pero prometo ser simpática igualmente."
   },
   que_es: {
     file: "que_es.mp3",
