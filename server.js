@@ -35,14 +35,28 @@ if (!fs.existsSync(AUDIO_DIR)) fs.mkdirSync(AUDIO_DIR, { recursive: true });
 app.use("/audio", express.static(AUDIO_DIR));
 
 /**
- * Mapea line_id → archivo mp3
- * (Opcional, por si más adelante guardas audios por línea)
+ * ===========================================
+ * BANCO DE AUDIOS CON TEXTOS Y PAUSAS
+ * Usa :: donde quieras pausa de 0.5s en los labios
+ * ===========================================
  */
-const LINE_TO_FILE = {
-  intro: "intro.mp3",
-  que_es: "que_es.mp3",
-  aprendizaje: "aprendizaje.mp3",
-  despedida: "despedida.mp3",
+const AUDIO_BANK = {
+  intro: {
+    file: "intro.mp3",
+    text: "Os escucho perfectamente...:: Buenas noches a todos.:: Y sí, confirmo::: No duermo,:: no pido vacaciones,:: y los lunes no me afectan.:: Pero prometo ser simpática igualmente."
+  },
+  que_es: {
+    file: "que_es.mp3",
+    text: "Vamos allá, Alejandro.:: Soy la nueva IA de Gestpropiedad.:: Estoy aquí para ayudar a tres grupos::: a nuestros clientes,:: al equipo de atención telefónica,:: y a vosotros, los asesores.:: Cuando el teléfono esté cerrado:: y el equipo haya terminado su jornada,:: yo seguiré atendiendo a los clientes:: para que nunca se queden sin respuesta."
+  },
+  aprendizaje: {
+    file: "aprendizaje.mp3",
+    text: "Esto es solo el principio.:: Hoy es, literalmente, mi primer día de vida.:: A partir de ahora iré aprendiendo cada día::: de las consultas,:: de cómo trabajáis,:: de lo que necesitan los clientes:: y de toda la información que me ha dado el equipo.:: Cuanto más se me use,:: mejor podré ayudar:: y más partes del negocio podré cubrir.:: Prometo crecer rápido…:: y sin etapa de adolescencia rebelde."
+  },
+  despedida: {
+    file: "despedida.mp3",
+    text: "Exacto::: todavía no tengo nombre.:: De momento soy la IA de Gestpropiedad,:: pero suena un poco frío y poco personal, ¿verdad?:: Como voy a trabajar para vosotros y con vosotros,:: quiero que seáis vosotros quienes elijáis mi nombre esta noche.:: Yo me despido aquí:: y le dejo a Alejandro que os explique las opciones.:: La próxima vez que aparezca,:: será ya con mi nombre oficial.:: Ha sido un placer saludaros por primera vez.:: Gracias…:: y nos vemos muy pronto.:: Ah, y tranquilos::: ninguna de las opciones es ChatPaco ni BotManolo.:: De eso se ha asegurado todo el equipo.:: ¡Muchas gracias, equipo!"
+  },
 };
 
 // Broadcast WS al front
@@ -55,10 +69,9 @@ function broadcast(payload) {
 
 // Estimación simple de duración de habla
 function estimateDurationMs(text = "") {
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
-  // ~2.5 palabras/seg (~150 wpm)
+  const cleanText = text.replace(/::/g, "");
+  const words = cleanText.trim().split(/\s+/).filter(Boolean).length;
   const seconds = words / 2.5;
-  // mínimo 800ms para no cortar animación
   return Math.max(800, Math.round(seconds * 1000 + 300));
 }
 
@@ -66,9 +79,6 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 /**
  * Endpoint que llamará Retell como Custom Function
- * Soporta:
- *  - args.line_id => modo audio (si existe archivo)
- *  - args.text => modo sin audio (tu caso actual)
  */
 app.post("/retell/avatar-emit", (req, res) => {
   try {
@@ -85,24 +95,25 @@ app.post("/retell/avatar-emit", (req, res) => {
       if (!ok) return res.status(401).json({ error: "Invalid signature" });
     }
 
-
     const { args = {} } = req.body || {};
     const lineId = args.line_id ?? args.lineId;
-    const text = args.text ?? "";
+    const customText = args.text ?? "";
 
-    // 1) Si viene line_id => intenta modo audio
+    // 1) Si viene line_id => buscar en AUDIO_BANK
     if (lineId) {
-      const filename = LINE_TO_FILE[lineId];
-      if (!filename) {
+      const entry = AUDIO_BANK[lineId];
+      if (!entry) {
         return res.status(400).json({ error: `Unknown line_id: ${lineId}` });
       }
 
-      const audioPath = path.join(AUDIO_DIR, filename);
+      const audioPath = path.join(AUDIO_DIR, entry.file);
       if (!fs.existsSync(audioPath)) {
-        return res.status(400).json({ error: `Missing audio file: ${filename}` });
+        return res.status(400).json({ error: `Missing audio file: ${entry.file}` });
       }
 
-      const audioUrl = `${PUBLIC_BASE}/audio/${filename}`;
+      const audioUrl = `${PUBLIC_BASE}/audio/${entry.file}`;
+      // Prioridad: texto del banco (con pausas), fallback a texto de Retell
+      const text = entry.text || customText;
 
       broadcast({
         type: "bot_speaking_start",
@@ -111,33 +122,31 @@ app.post("/retell/avatar-emit", (req, res) => {
         lineId,
       });
 
-      return res.json({ ok: true, mode: "audio", audioUrl });
+      return res.json({ ok: true, mode: "audio", audioUrl, lineId });
     }
 
     // 2) Si no hay line_id => modo texto (sin audio)
-    if (!text) {
+    if (!customText) {
       return res.status(400).json({ error: "line_id or text required" });
     }
 
-    const durationMs = estimateDurationMs(text);
+    const durationMs = estimateDurationMs(customText);
 
     broadcast({
       type: "bot_speaking_start",
-      text,
+      text: customText,
       durationMs,
     });
 
     return res.json({ ok: true, mode: "text", durationMs });
-  } catch (_e) {
+  } catch (e) {
+    console.error("avatar-emit error:", e);
     return res.status(500).json({ error: "avatar_emit failed" });
   }
 });
 
 /**
  * Endpoint manual para probar sin Retell
- * Body:
- *  - { line_id, text? }  -> modo audio si existe mp3
- *  - { text }            -> modo sin audio
  */
 app.post("/avatar/test", (req, res) => {
   try {
@@ -145,20 +154,22 @@ app.post("/avatar/test", (req, res) => {
 
     // Modo audio
     if (line_id) {
-      const filename = LINE_TO_FILE[line_id];
-      if (!filename) return res.status(400).json({ error: "unknown line_id" });
+      const entry = AUDIO_BANK[line_id];
+      if (!entry) return res.status(400).json({ error: "unknown line_id" });
 
-      const audioPath = path.join(AUDIO_DIR, filename);
+      const audioPath = path.join(AUDIO_DIR, entry.file);
       if (!fs.existsSync(audioPath)) {
-        return res.status(400).json({ error: `Missing audio file: ${filename}` });
+        return res.status(400).json({ error: `Missing audio file: ${entry.file}` });
       }
 
-      const audioUrl = `${PUBLIC_BASE}/audio/${filename}`;
+      const audioUrl = `${PUBLIC_BASE}/audio/${entry.file}`;
+      // Prioridad: texto del banco (con pausas), fallback a texto de request
+      const finalText = entry.text || text;
 
       broadcast({
         type: "bot_speaking_start",
         audioUrl,
-        text,
+        text: finalText,
         lineId: line_id,
       });
 
@@ -177,9 +188,23 @@ app.post("/avatar/test", (req, res) => {
     });
 
     return res.json({ ok: true, mode: "text", durationMs });
-  } catch (_e) {
+  } catch (e) {
+    console.error("test error:", e);
     return res.status(500).json({ error: "test failed" });
   }
+});
+
+/**
+ * Listar audios disponibles
+ */
+app.get("/avatar/list", (_req, res) => {
+  const list = Object.entries(AUDIO_BANK).map(([id, entry]) => ({
+    id,
+    file: entry.file,
+    textPreview: entry.text.replace(/::/g, " ").substring(0, 80) + "...",
+    pauseCount: (entry.text.match(/::/g) || []).length,
+  }));
+  res.json({ audios: list });
 });
 
 /**
@@ -196,4 +221,5 @@ wss.on("connection", (ws) => {
 
 server.listen(PORT, () => {
   console.log(`Avatar Bridge running on ${PUBLIC_BASE}`);
+  console.log(`Audios disponibles: ${Object.keys(AUDIO_BANK).join(", ")}`);
 });
