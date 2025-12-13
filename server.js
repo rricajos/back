@@ -41,19 +41,19 @@ app.use("/audio", express.static(AUDIO_DIR));
  * ===========================================
  */
 const AUDIO_BANK = {
-  intro: {
+  intro_1: {
     file: "intro_1.mp3",
     text: "Hola a todos. :: Perdonad mi entrada… :: estaba esperando. :: Y he pensado: :: igual os habíais olvidado de mí.",
   },
-  que_es: {
+  que_es_1: {
     file: "que_es_1.mp3",
     text: ":: Pero prometo ser simpática igualmente. :::: Me presento: :: soy la nueva IA de Gestpropiedad. :: Vengo a echar una mano en tres frentes. :::: Primero, con los clientes. :: Cuando la oficina cierre, :: me quedo de guardia :: para que ningún cliente se quede sin respuesta. :::: Segundo, en la web. :: Ayudaré a entender mejor cada vivienda :: y a guiar a cada cliente :: hasta el asesor correcto. :::: Y tercero, el más importante: :: vosotros. :: Os ayudaré a encontrar la información que necesitéis :: en segundos, :: y a responder con más claridad… :: sin quitaros vuestro estilo. ::::",
   },
-  aprendizaje: {
+  aprendizaje_1: {
     file: "aprendizaje_1.mp3",
     text: "No es todo, :: Esto es solo el principio. :: Hoy es, literalmente, :: mi nacimiento. :::: A partir de ahora iré aprendiendo cada día: :: de las consultas… :: de cómo trabajáis… :: de lo que necesitan los clientes… :: y de los datos que me ha proporcionado el equipo. :::: Cuanto más se me use, :: mejor podré ayudar… :: y en más ámbitos. :: Prometo crecer rápido… :: y sin adolescencia rebelde. ::::",
   },
-  despedida: {
+  despedida_1: {
     file: "despedida_1.mp3",
     text: "Exacto. :: No tengo nombre. :: De momento soy “la IA de Gestpropiedad”… :: y suena frío, :: poco personal... :::: Como vamos a trabajar juntos, :: me gustaría que fuerais vosotros, :: mi equipo, :: quienes elijáis mi nombre :: esta noche. :::: Yo me despido aquí :: y os dejo con Alejandro :: para que os explique las opciones. :: Para cuando vuelva… :: ya será con mi nombre oficial. :::: Y tranquilos: :: ninguna opción es “ChatPaco” :: ni “BotManolo”... :: …de eso podéis estar seguros... :::: Ha sido un placer saludaros :: por primera vez. :: Gracias, :: y nos vemos muy pronto. ::::::",
   },
@@ -225,7 +225,7 @@ app.post("/avatar/stop", (_req, res) => {
 });
 
 wss.on("connection", (ws) => {
-  ws.send(JSON.stringify({ type: "hello", ts: Date.now() }));
+  ws.send(JSON.stringify({ type: "intro_1", ts: Date.now() }));
 });
 
 server.listen(PORT, () => {
