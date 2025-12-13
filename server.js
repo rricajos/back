@@ -43,19 +43,19 @@ app.use("/audio", express.static(AUDIO_DIR));
 const AUDIO_BANK = {
   intro: {
     file: "intro.mp3",
-    text: "Os escucho perfectamente...:: Buenas noches a todos. :::: Y sí, :::: confirmo: :: No duermo, :::: no pido vacaciones :: y los lunes no me afectan. :: :: :: Pero prometo ser simpática igualmente."
+    text: "Hola a todos. :: Perdonad mi entrada… :: estaba esperando. :: Y he pensado: :: igual os habíais olvidado de mí.",
   },
   que_es: {
     file: "que_es.mp3",
-    text: "Vamos allá, Alejandro.:: Soy la nueva IA de Gestpropiedad.:: Estoy aquí para ayudar a tres grupos::: a nuestros clientes,:: al equipo de atención telefónica,:: y a vosotros, los asesores.:: Cuando el teléfono esté cerrado:: y el equipo haya terminado su jornada,:: yo seguiré atendiendo a los clientes:: para que nunca se queden sin respuesta."
+    text: ":: Pero prometo ser simpática igualmente. :::: Me presento: :: soy la nueva IA de Gestpropiedad. :: Vengo a echar una mano en tres frentes. :::: Primero, con los clientes. :: Cuando la oficina cierre, :: me quedo de guardia :: para que ningún cliente se quede sin respuesta. :::: Segundo, en la web. :: Ayudaré a entender mejor cada vivienda :: y a guiar a cada cliente :: hasta el asesor correcto. :::: Y tercero, el más importante: :: vosotros. :: Os ayudaré a encontrar la información que necesitéis :: en segundos, :: y a responder con más claridad… :: sin quitaros vuestro estilo. ::::",
   },
   aprendizaje: {
     file: "aprendizaje.mp3",
-    text: "Esto es solo el principio.:: Hoy es, literalmente, mi primer día de vida.:: A partir de ahora iré aprendiendo cada día::: de las consultas,:: de cómo trabajáis,:: de lo que necesitan los clientes:: y de toda la información que me ha dado el equipo.:: Cuanto más se me use,:: mejor podré ayudar:: y más partes del negocio podré cubrir.:: Prometo crecer rápido…:: y sin etapa de adolescencia rebelde."
+    text: "No es todo, :: Esto es solo el principio. :: Hoy es, literalmente, :: mi nacimiento. :::: A partir de ahora iré aprendiendo cada día: :: de las consultas… :: de cómo trabajáis… :: de lo que necesitan los clientes… :: y de los datos que me ha proporcionado el equipo. :::: Cuanto más se me use, :: mejor podré ayudar… :: y en más ámbitos. :: Prometo crecer rápido… :: y sin adolescencia rebelde. ::::",
   },
   despedida: {
     file: "despedida.mp3",
-    text: "Exacto::: todavía no tengo nombre.:: De momento soy la IA de Gestpropiedad,:: pero suena un poco frío y poco personal, ¿verdad?:: Como voy a trabajar para vosotros y con vosotros,:: quiero que seáis vosotros quienes elijáis mi nombre esta noche.:: Yo me despido aquí:: y le dejo a Alejandro que os explique las opciones.:: La próxima vez que aparezca,:: será ya con mi nombre oficial.:: Ha sido un placer saludaros por primera vez.:: Gracias…:: y nos vemos muy pronto.:: Ah, y tranquilos::: ninguna de las opciones es ChatPaco ni BotManolo.:: De eso se ha asegurado todo el equipo.:: ¡Muchas gracias, equipo!"
+    text: "Exacto. :: No tengo nombre. :: De momento soy “la IA de Gestpropiedad”… :: y suena frío, :: poco personal... :::: Como vamos a trabajar juntos, :: me gustaría que fuerais vosotros, :: mi equipo, :: quienes elijáis mi nombre :: esta noche. :::: Yo me despido aquí :: y os dejo con Alejandro :: para que os explique las opciones. :: Para cuando vuelva… :: ya será con mi nombre oficial. :::: Y tranquilos: :: ninguna opción es “ChatPaco” :: ni “BotManolo”... :: …de eso podéis estar seguros... :::: Ha sido un placer saludaros :: por primera vez. :: Gracias, :: y nos vemos muy pronto. ::::::",
   },
 };
 
@@ -83,7 +83,8 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.post("/retell/avatar-emit", (req, res) => {
   try {
     const signature = req.headers["x-retell-signature"];
-    const verifyEnabled = (process.env.RETELL_VERIFY_SIGNATURE ?? "true") !== "false";
+    const verifyEnabled =
+      (process.env.RETELL_VERIFY_SIGNATURE ?? "true") !== "false";
 
     if (
       verifyEnabled &&
@@ -91,7 +92,11 @@ app.post("/retell/avatar-emit", (req, res) => {
       signature &&
       typeof Retell?.verify === "function"
     ) {
-      const ok = Retell.verify(req.rawBody ?? "", process.env.RETELL_API_KEY, signature);
+      const ok = Retell.verify(
+        req.rawBody ?? "",
+        process.env.RETELL_API_KEY,
+        signature
+      );
       if (!ok) return res.status(401).json({ error: "Invalid signature" });
     }
 
@@ -108,7 +113,9 @@ app.post("/retell/avatar-emit", (req, res) => {
 
       const audioPath = path.join(AUDIO_DIR, entry.file);
       if (!fs.existsSync(audioPath)) {
-        return res.status(400).json({ error: `Missing audio file: ${entry.file}` });
+        return res
+          .status(400)
+          .json({ error: `Missing audio file: ${entry.file}` });
       }
 
       const audioUrl = `${PUBLIC_BASE}/audio/${entry.file}`;
@@ -159,7 +166,9 @@ app.post("/avatar/test", (req, res) => {
 
       const audioPath = path.join(AUDIO_DIR, entry.file);
       if (!fs.existsSync(audioPath)) {
-        return res.status(400).json({ error: `Missing audio file: ${entry.file}` });
+        return res
+          .status(400)
+          .json({ error: `Missing audio file: ${entry.file}` });
       }
 
       const audioUrl = `${PUBLIC_BASE}/audio/${entry.file}`;
